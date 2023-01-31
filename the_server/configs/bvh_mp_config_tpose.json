@@ -1,0 +1,644 @@
+{
+    "Hips": {
+        "bvh_name": "Hips",
+        "bvh_index": 0,
+        "parent": null,
+        "offset": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": true,
+        "mp_index": 33,
+        "mp_joint_type": "rigid",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 24,
+                "to": 23
+            },
+            "y": {
+                "defined": true,
+                "from": 34,
+                "to": 33
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "Chest": {
+        "bvh_name": "Chest",
+        "bvh_index": 1,
+        "parent": "Hips",
+        "offset": {
+            "x": 0.0,
+            "y": 20.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 35,
+        "mp_joint_type": "rigid",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 12,
+                "to": 11
+            },
+            "y": {
+                "defined": true,
+                "from": 34,
+                "to": 35
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "LeftShoulder": {
+        "bvh_name": "LeftShoulder",
+        "bvh_index": 2,
+        "parent": "Chest",
+        "offset": {
+            "x": 20.0,
+            "y": 20.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 12,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 14,
+                "to": 12
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        }
+        ,
+        "main_ref_axis": "x"
+    },
+    "LeftElbow": {
+        "bvh_name": "LeftElbow",
+        "bvh_index": 3,
+        "parent": "LeftShoulder",
+        "offset": {
+            "x": 25.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 14,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 16,
+                "to": 14
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "LeftWrist": {
+        "bvh_name": "LeftWrist",
+        "bvh_index": 4,
+        "parent": "LeftElbow",
+        "offset": {
+            "x": 22.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 16,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 18,
+                "to": 16
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        }
+        ,
+        "main_ref_axis": "x"
+    },
+    "LeftWrist_End": {
+        "bvh_name": "LeftWrist_End",
+        "bvh_index": 5,
+        "parent": "LeftWrist",
+        "offset": {
+            "x": 15.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": true,
+        "is_root": false,
+        "mp_index": 18,
+        "mp_joint_type": "EndSite",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": null
+    },
+    "RightShoulder": {
+        "bvh_name": "RightShoulder",
+        "bvh_index": 6,
+        "parent": "Chest",
+        "offset": {
+            "x": -20.0,
+            "y": 20.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 11,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 11,
+                "to": 13
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "RightElbow": {
+        "bvh_name": "RightElbow",
+        "bvh_index": 7,
+        "parent": "RightShoulder",
+        "offset": {
+            "x": -25.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 13,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 13,
+                "to": 15
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "RightWrist": {
+        "bvh_name": "RightWrist",
+        "bvh_index": 8,
+        "parent": "RightElbow",
+        "offset": {
+            "x": -22.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 15,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 15,
+                "to": 17
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "RightWrist_End": {
+        "bvh_name": "RightWrist_End",
+        "bvh_index": 9,
+        "parent": "RightWrist",
+        "offset": {
+            "x": -15.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": true,
+        "is_root": false,
+        "mp_index": 17,
+        "mp_joint_type": "EndSite",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": null
+    },
+    "Neck": {
+        "bvh_name": "Neck",
+        "bvh_index": 10,
+        "parent": "Chest",
+        "offset": {
+            "x": 0.0,
+            "y": 20.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 34,
+        "mp_joint_type": "rigid",
+        "ref_axes": {
+            "x": {
+                "defined": true,
+                "from": 8,
+                "to": 7
+            },
+            "y": {
+                "defined": true,
+                "from": 34,
+                "to": 35
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "x"
+    },
+    "Neck_End": {
+        "bvh_name": "Neck_End",
+        "bvh_index": 11,
+        "parent": "Neck",
+        "offset": {
+            "x": 0.0,
+            "y": 15.0,
+            "z": 10.0
+        },
+        "is_endsite": true,
+        "is_root": false,
+        "mp_index": 0,
+        "mp_joint_type": "EndSite",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": null
+    },
+    "LeftHip": {
+        "bvh_name": "LeftHip",
+        "bvh_index": 12,
+        "parent": "Hips",
+        "offset": {
+            "x": 10.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 24,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": true,
+                "from": 24,
+                "to": 26
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "y"
+    },
+    "LeftKnee": {
+        "bvh_name": "LeftKnee",
+        "bvh_index": 13,
+        "parent": "LeftHip",
+        "offset": {
+            "x": 0.0,
+            "y": -50.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 26,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": true,
+                "from": 26,
+                "to": 28
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "y"
+    },
+    "LeftAnkle": {
+        "bvh_name": "LeftAnkle",
+        "bvh_index": 14,
+        "parent": "LeftKnee",
+        "offset": {
+            "x": 0.0,
+            "y": -40.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 28,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": true,
+                "from": 32,
+                "to": 28
+            }
+        },
+        "main_ref_axis": "z"
+    },
+    "LeftAnkle_End": {
+        "bvh_name": "LeftAnkle_End",
+        "bvh_index": 15,
+        "parent": "LeftAnkle",
+        "offset": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 20.0
+        },
+        "is_endsite": true,
+        "is_root": false,
+        "mp_index": 32,
+        "mp_joint_type": "EndSite",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": null
+    },
+    "RightHip": {
+        "bvh_name": "RightHip",
+        "bvh_index": 16,
+        "parent": "Hips",
+        "offset": {
+            "x": -10.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 23,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": true,
+                "from": 23,
+                "to": 25
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "y"
+    },
+    "RightKnee": {
+        "bvh_name": "RightKnee",
+        "bvh_index": 17,
+        "parent": "RightHip",
+        "offset": {
+            "x": 0.0,
+            "y": -50.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 25,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": true,
+                "from": 25,
+                "to": 27
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": "y"
+    },
+    "RightAnkle": {
+        "bvh_name": "RightAnkle",
+        "bvh_index": 18,
+        "parent": "RightKnee",
+        "offset": {
+            "x": 0.0,
+            "y": -40.0,
+            "z": 0.0
+        },
+        "is_endsite": false,
+        "is_root": false,
+        "mp_index": 27,
+        "mp_joint_type": "vector",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": true,
+                "from": 31,
+                "to": 27
+            }
+        },
+        "main_ref_axis": "z"
+    },
+    "RightAnkle_End": {
+        "bvh_name": "RightAnkle_End",
+        "bvh_index": 19,
+        "parent": "RightAnkle",
+        "offset": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 20.0
+        },
+        "is_endsite": true,
+        "is_root": false,
+        "mp_index": 31,
+        "mp_joint_type": "EndSite",
+        "ref_axes": {
+            "x": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "y": {
+                "defined": false,
+                "from": null,
+                "to": null
+            },
+            "z": {
+                "defined": false,
+                "from": null,
+                "to": null
+            }
+        },
+        "main_ref_axis": null
+    }
+}

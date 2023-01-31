@@ -1,0 +1,14 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+/the_server/.idea/
+/the_server/temp/
+/the_server/sample/
+/the_server/__pycache__/
+*/__pycache__/
