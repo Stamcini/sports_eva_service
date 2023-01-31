@@ -7,6 +7,11 @@ from .video2mp_np import video2mp_np
 from .mp_to_bvh_solution import BvhSolution, BvhNode
 
 
+# from server_django.settings import BASE_DIR
+
+# config_dir = os.path.join(BASE_DIR, 'configs')
+
+
 class ReturnJson:
     default = -1
     score_items = ['holistic', 'torso', 'upper', 'lower']
@@ -53,10 +58,10 @@ class Scoring:
         with open(scoring_parts_config_json, 'r') as f:
             self.scoring_parts = json.loads(f.read())
         self.random_seed = random_seed
-        if sport_type in [0, 1, 2] and str(sport_type) + '.npy' not in os.listdir(model_seq_dir):
-            Scoring.regenerate_model_seq(model_seq_dir, model_vid_dir, sport_type)
-        else:
+        if sport_type not in [0, 1, 2]:
             raise "sport type should fall in these values: [0,1,2]"
+        if str(sport_type) + '.npy' not in os.listdir(model_seq_dir):
+            Scoring.regenerate_model_seq(model_seq_dir, model_vid_dir, sport_type)
         self.model_seq = np.load(model_seq_dir + '/' + str(sport_type) + '.npy')
         self.maximum_dtw_dist = {}
 
@@ -68,8 +73,12 @@ class Scoring:
         elif sport_type not in [0, 1, 2]:
             raise "sport type should be either -1, 0, 1, 2"
         else:
-            bvh_tmp = BvhSolution()  # use self.bvh's configs here
-            Scoring.get_normalized_mp_seq()
+            mp_dict_tmp = video2mp_np(vid_dir + '/' + str(sport_type) + '.mp4')
+            bvh_tmp = BvhSolution(self.bvh.bvh_mp_config_json, self.bvh.mp_hierarchy_json,
+                                  self.bvh.bvh_template_file)  # use self.bvh's configs here
+            bvh_tmp.convert_mediapipe(mp_dict_tmp['mp_data'])
+            model_seq = Scoring.get_normalized_mp_seq(bvh_tmp)
+            np.save(seq_dir + '/' + str(sport_type) + '.npy', model_seq)
 
     @staticmethod
     def regenerate_maximum_random_seq(shape: (int, int, int), seed: int) -> np.ndarray:
@@ -103,6 +112,7 @@ class Scoring:
     @staticmethod
     def rotate_one_node_n_children(armature_np: np.ndarray, bvh: BvhSolution, node_bvh_index: int):
         # armature.shape: (frame, bvh_index, (x,y,z))
+        # works recursively
 
         if bvh.nodes[node_bvh_index].is_endsite:
             return
@@ -138,50 +148,56 @@ class Scoring:
         return np.abs(1 - np.log(x + 1) / np.log(maximum + 1))
 
     @staticmethod
-    def get_scores(subject_seq: np.ndarray, curated_lm_list: [int, ...], model_seq: np.ndarray,
+    def get_scores(subject_seq: np.ndarray, curated_lm_list: [int, ...], model_seq: np.ndarray, random_seq: np.ndarray,
                    distance_method: staticmethod = distance_euclidean,
                    dtw2scores_method: staticmethod = dtw2scores_1) -> float:
+        curated_model = np.take(model_seq, curated_lm_list, 1)
         curated_seq = np.take(subject_seq, curated_lm_list, 1)
-        dtw_distance_accumulated = dtw.dtw(model_seq, curated_seq, distance_method)
-        score = dtw2scores_method(dtw_distance_accumulated, )
-
+        dtw_distance_accumulated = dtw.dtw(curated_model, curated_seq, distance_method)
+        curated_random_seq = np.take(random_seq, curated_lm_list, 1)
+        dtw_distance_random = dtw.dtw(curated_model, curated_random_seq, distance_method)
+        score = dtw2scores_method(dtw_distance_accumulated, dtw_distance_random)
         return score
 
-    # @staticmethod
-    # def holistic():
-    #     pass
-    #
-    # @staticmethod
-    # def torso():
-    #     pass
-    #
-    # @staticmethod
-    # def upper():
-    #     pass
-    #
-    # @staticmethod
-    # def lower():
-    #     pass
 
-    # @staticmethod
-    # def get_scores(model_seq, subject_seq, body_part: str):
-    #     pass
+# @staticmethod
+# def holistic():
+#     pass
+#
+# @staticmethod
+# def torso():
+#     pass
+#
+# @staticmethod
+# def upper():
+#     pass
+#
+# @staticmethod
+# def lower():
+#     pass
 
-    @staticmethod
-    def energy():
-        pass
+# @staticmethod
+# def get_scores(model_seq, subject_seq, body_part: str):
+#     pass
 
-    @staticmethod
-    def fat():
-        pass
+@staticmethod
+def energy():
+    pass
 
-    @staticmethod
-    def energy_standard():
-        pass
 
-    @staticmethod
-    def fat_standard():
-        pass
+@staticmethod
+def fat():
+    pass
+
+
+@staticmethod
+def energy_standard():
+    pass
+
+
+@staticmethod
+def fat_standard():
+    pass
 
 
 class WholeSolution:

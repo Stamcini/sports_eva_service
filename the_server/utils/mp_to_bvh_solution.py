@@ -65,7 +65,7 @@ class BvhSolution:
     # mp_data: np.ndarray = None
     # frame_rate = None
 
-    def __init__(self, bvh_mp_config_json, mp_hierarchy_json, bvh_template_file):
+    def __init__(self, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str):
         self.bvh_mp_config_json = bvh_mp_config_json
         self.bvh_mp_config = None
         self.mp_hierarchy_json = mp_hierarchy_json  # which defines the hierarchy of the mp
