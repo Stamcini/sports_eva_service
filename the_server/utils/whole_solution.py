@@ -3,8 +3,8 @@ import copy
 import os
 import numpy as np
 import dtw
-from .video2mp_np import video2mp_np
-from .mp_to_bvh_solution import BvhSolution, BvhNode
+from utils.video2mp_np import video2mp_np
+from utils.mp_to_bvh_solution import BvhSolution, BvhNode
 
 
 # from server_django.settings import BASE_DIR
@@ -51,6 +51,7 @@ class Scoring:
     body_parts = ['holistic', 'torso', 'upper', 'lower']
 
     def __init__(self, bvh: BvhSolution, sport_type: int, scoring_parts_config_json: str, model_seq_dir: str,
+                 random_seq_dir: str,
                  model_vid_dir: str, random_seed: int = 1000):
         self.bvh = bvh
         self.armature_one = Scoring.armature_one_from_bvh(bvh)
@@ -60,12 +61,15 @@ class Scoring:
         self.random_seed = random_seed
         if sport_type not in [0, 1, 2]:
             raise "sport type should fall in these values: [0,1,2]"
-        if str(sport_type) + '.npy' not in os.listdir(model_seq_dir):
-            Scoring.regenerate_model_seq(model_seq_dir, model_vid_dir, sport_type)
-        self.model_seq = np.load(model_seq_dir + '/' + str(sport_type) + '.npy')
-        self.maximum_dtw_dist = {}
+        if 'model_' + str(sport_type) + '.npy' not in os.listdir(model_seq_dir):
+            self.regenerate_model_seq(model_seq_dir, model_vid_dir, sport_type)
+        self.model_seq = np.load(model_seq_dir + '/model_' + str(sport_type) + '.npy')
+        if 'random_' + str(sport_type) + '.npy' not in os.listdir(random_seq_dir):
+            self.regenerate_maximum_random_seq(random_seq_dir, (self.model_seq.shape[0], 36, 3), random_seed,
+                                               sport_type)
+        self.random_seq = np.load(random_seq_dir + '/random_' + str(sport_type) + '.npy')
 
-    def regenerate_model_seq(self, seq_dir: str, vid_dir: str, sport_type: int = -1):
+    def regenerate_model_seq(self, seq_dir: str, vid_dir: str, sport_type: int = -1) -> None:
         # model videos are names 0.mp4, 1.mp4 and 2.mp4
         # model seqs are named 0.
         if sport_type == -1:
@@ -78,11 +82,20 @@ class Scoring:
                                   self.bvh.bvh_template_file)  # use self.bvh's configs here
             bvh_tmp.convert_mediapipe(mp_dict_tmp['mp_data'])
             model_seq = Scoring.get_normalized_mp_seq(bvh_tmp)
-            np.save(seq_dir + '/' + str(sport_type) + '.npy', model_seq)
+            np.save(seq_dir + '/model_' + str(sport_type) + '.npy', model_seq)
 
-    @staticmethod
-    def regenerate_maximum_random_seq(shape: (int, int, int), seed: int) -> np.ndarray:
-        pass  # todo
+    def regenerate_maximum_random_seq(self, seq_dir: str, shape: (int, int, int), seed: int,
+                                      sport_type: int = -1) -> None:
+        if sport_type == -1:
+            [self.regenerate_maximum_random_seq(seq_dir, shape, seed, i) for i in range(2)]
+        elif sport_type not in [0, 1, 2]:
+            raise "sport type should be either -1, 0, 1, 2"
+        else:
+            bvh_tmp = BvhSolution(self.bvh.bvh_mp_config_json, self.bvh.mp_hierarchy_json,
+                                  self.bvh.bvh_template_file)  # use self.bvh's configs here
+            bvh_tmp.convert_mediapipe(np.random.random(shape))
+            random_seq_normalized = Scoring.get_normalized_mp_seq(bvh_tmp)
+            np.save(seq_dir + '/random_' + str(sport_type) + '.npy', random_seq_normalized)
 
     @staticmethod
     def armature_one_from_bvh(bvh: BvhSolution) -> np.ndarray:
@@ -148,56 +161,59 @@ class Scoring:
         return np.abs(1 - np.log(x + 1) / np.log(maximum + 1))
 
     @staticmethod
-    def get_scores(subject_seq: np.ndarray, curated_lm_list: [int, ...], model_seq: np.ndarray, random_seq: np.ndarray,
-                   distance_method: staticmethod = distance_euclidean,
-                   dtw2scores_method: staticmethod = dtw2scores_1) -> float:
+    def get_scores_static(subject_seq: np.ndarray, curated_lm_list: [int, ...], model_seq: np.ndarray,
+                          random_seq: np.ndarray,
+                          distance_method=Scoring.distance_euclidean,
+                          dtw2scores_method=Scoring.dtw2scores_1) -> float:
         curated_model = np.take(model_seq, curated_lm_list, 1)
         curated_seq = np.take(subject_seq, curated_lm_list, 1)
-        dtw_distance_accumulated = dtw.dtw(curated_model, curated_seq, distance_method)
+        dtw_distance_accumulated = dtw.dtw(curated_model, curated_seq, distance_method)[0]
         curated_random_seq = np.take(random_seq, curated_lm_list, 1)
-        dtw_distance_random = dtw.dtw(curated_model, curated_random_seq, distance_method)
+        dtw_distance_random = dtw.dtw(curated_model, curated_random_seq, distance_method)[0]
         score = dtw2scores_method(dtw_distance_accumulated, dtw_distance_random)
         return score
 
+    def get_scores(self, mp_data, part: str) -> float:
+        if part not in self.scoring_parts:
+            raise "invalid part!"
+        return Scoring.get_scores_static(mp_data, self.scoring_parts[part], self.model_seq, self.random_seq,
+                                         self.distance_euclidean, self.dtw2scores_1)
 
-# @staticmethod
-# def holistic():
-#     pass
-#
-# @staticmethod
-# def torso():
-#     pass
-#
-# @staticmethod
-# def upper():
-#     pass
-#
-# @staticmethod
-# def lower():
-#     pass
+    # @staticmethod
+    # def holistic():
+    #     pass
+    #
+    # @staticmethod
+    # def torso():
+    #     pass
+    #
+    # @staticmethod
+    # def upper():
+    #     pass
+    #
+    # @staticmethod
+    # def lower():
+    #     pass
 
-# @staticmethod
-# def get_scores(model_seq, subject_seq, body_part: str):
-#     pass
+    # @staticmethod
+    # def get_scores(model_seq, subject_seq, body_part: str):
+    #     pass
 
-@staticmethod
-def energy():
-    pass
+    @staticmethod
+    def energy():
+        pass
 
+    @staticmethod
+    def fat():
+        pass
 
-@staticmethod
-def fat():
-    pass
+    @staticmethod
+    def energy_standard():
+        pass
 
-
-@staticmethod
-def energy_standard():
-    pass
-
-
-@staticmethod
-def fat_standard():
-    pass
+    @staticmethod
+    def fat_standard():
+        pass
 
 
 class WholeSolution:

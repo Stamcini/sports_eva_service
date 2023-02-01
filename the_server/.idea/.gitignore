@@ -7,8 +7,3 @@
 /dataSources/
 /dataSources.local.xml
 
-/the_server/.idea/
-/the_server/temp/
-/the_server/sample/
-/the_server/__pycache__/
-*/__pycache__/
