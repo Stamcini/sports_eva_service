@@ -13,7 +13,7 @@ from utils.mp_to_bvh_solution import BvhSolution, BvhNode
 
 
 class ReturnJson:
-    default = -1
+    default = -1.
     score_items = ['holistic', 'torso', 'upper', 'lower']
     energy_items = ['energy', 'fat', 'energy_standard', 'fat_standard']
     return_dict_default = {
@@ -42,13 +42,15 @@ class ReturnJson:
         else:
             self.return_dict = copy.deepcopy(ReturnJson.return_dict_default)
 
-    def get_json(self):
+    def get_json(self) -> str:
         return json.dumps(self.return_dict)
 
 
 class Scoring:
     sport_types = {'high_knees': 0, 'jumping_jacks': 1, 'thoracic_rotation': 2}
     body_parts = ['holistic', 'torso', 'upper', 'lower']
+    met_values = [8, 8, 3]
+    fat_percentage = [0.3, 0.3, 0.5]
 
     def __init__(self, bvh: BvhSolution, sport_type: int, scoring_parts_config_json: str, model_seq_dir: str,
                  random_seq_dir: str,
@@ -163,8 +165,8 @@ class Scoring:
     @staticmethod
     def get_scores_static(subject_seq: np.ndarray, curated_lm_list: [int, ...], model_seq: np.ndarray,
                           random_seq: np.ndarray,
-                          distance_method=Scoring.distance_euclidean,
-                          dtw2scores_method=Scoring.dtw2scores_1) -> float:
+                          distance_method=distance_euclidean,
+                          dtw2scores_method=dtw2scores_1) -> float:
         curated_model = np.take(model_seq, curated_lm_list, 1)
         curated_seq = np.take(subject_seq, curated_lm_list, 1)
         dtw_distance_accumulated = dtw.dtw(curated_model, curated_seq, distance_method)[0]
@@ -200,72 +202,66 @@ class Scoring:
     #     pass
 
     @staticmethod
-    def energy():
-        pass
+    def energy(weight: float, time_span: float) -> float:
+        # weight in kg
+        # time_span in seconds
+        # return: energy in kcal
+
+        return weight * 0.95 * time_span / 3600  # here use 0.95 rather than 1.05 to make it looks reasonable
 
     @staticmethod
-    def fat():
-        pass
+    def fat(sport_type: int, weight: float, time_span: float) -> float:
+        # sport_type in [0,1,2]
+        # weight in kg
+        # time_span in seconds
+        # return: energy in kcal
+        if sport_type not in [0, 1, 2]:
+            raise "invalid sport type! [0,1,2] is stipulated"
+        return Scoring.energy(weight, time_span) * Scoring.fat_percentage[sport_type]
 
     @staticmethod
-    def energy_standard():
-        pass
+    def energy_standard(weight: float, time_span: float) -> float:
+        return weight * 1.05 * time_span / 3600
 
     @staticmethod
-    def fat_standard():
-        pass
+    def fat_standard(sport_type: int, weight: float, time_span: float) -> float:
+        if sport_type not in [0, 1, 2]:
+            raise "invalid sport type! [0,1,2] is stipulated"
+        return Scoring.energy_standard(weight, time_span) * Scoring.fat_percentage[sport_type]
 
 
 class WholeSolution:
     # stages=['load_video','video2mp','mp2bvh','scoring']
 
     def __init__(self, video: str, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str,
-                 temp_path: str):
+                 scoring_parts_json: str, temp_dir: str, model_video_dir: str,
+                 sport_type: int, time_span: float, weight: float):
         self.video = video
-        self.frame_rate = None
         self.mp_data = None
 
         self.ret = True  # error symbol
         self.error = ''  # error message if it fails somewhere
+        self.scoring_parts_json = scoring_parts_json
+        self.temp_dir = temp_dir
+        self.model_video_dir = model_video_dir
         self.bvh = BvhSolution(bvh_mp_config_json, mp_hierarchy_json, bvh_template_file)
 
-        self.scoring_methods = {'holistic': self.scoring_holistic, 'torso': self.scoring_torso,
-                                'upper': self.scoring_upper, 'lower': self.scoring_lower}
-        self.consumption_methods = {'energy': self.consumption_energy, 'fat': self.consumption_fat,
-                                    'energy_standard': self.consumption_energy_standard,
-                                    'fat_standard': self.consumption_fat_standard}
+        # self.scoring_methods = {'holistic': self.scoring_holistic, 'torso': self.scoring_torso,
+        #                         'upper': self.scoring_upper, 'lower': self.scoring_lower}
+        # self.consumption_methods = {'energy': self.consumption_energy, 'fat': self.consumption_fat,
+        #                             'energy_standard': self.consumption_energy_standard,
+        #                             'fat_standard': self.consumption_fat_standard}
         self.output_dict = {}
         self.output_json_str = ''
+        self.sport_type = sport_type
+        self.time_span = time_span
+        self.weight = weight
 
-    def scoring_holistic(self):
-        pass
+    # def get_scoring(self, which: str):
+    #     self.scoring_methods[which]()
 
-    def scoring_torso(self):
-        pass
-
-    def scoring_upper(self):
-        pass
-
-    def scoring_lower(self):
-        pass
-
-    def get_scoring(self, which: str):
-        self.scoring_methods[which]()
-
-    def consumption_energy(self):
-        pass
-
-    def consumption_fat(self):
-        pass
-
-    def consumption_energy_standard(self):
-        pass
-
-    def consumption_fat_standard(self):
-        pass
-
-    def get_consumption(self, which: str):
-        self.consumption_methods[which]()
+    # def get_consumption(self, which: str):
+    #     self.consumption_methods[which]()
 
     def robust_workflow(self) -> [bool, str, str]:
         """
@@ -283,13 +279,44 @@ class WholeSolution:
         else:
             pass
         self.mp_data = video2mp_tmp['mp_data']
-        self.frame_rate = video2mp_tmp['frame_rate']
+        self.bvh.frame_rate = video2mp_tmp['frame_rate']
 
         # mediapipe to bvh
         self.bvh.convert_mediapipe(self.mp_data)
 
         # scoring & consumption
+        scorer_tmp = Scoring(self.bvh, self.sport_type, self.scoring_parts_json, self.temp_dir,
+                             self.temp_dir,
+                             self.model_video_dir)
+
+        mp_data_normalized = scorer_tmp.get_normalized_mp_seq(self.bvh)
+        scores = [scorer_tmp.get_scores(mp_data_normalized, i) for i in Scoring.body_parts]
+
+        energy = Scoring.energy(self.weight, self.time_span)
+        fat = Scoring.fat(self.sport_type, self.weight, self.time_span)
+        energy_std = Scoring.energy_standard(self.weight, self.time_span)
+        fat_std = Scoring.fat_standard(self.sport_type, self.weight, self.time_span)
 
         # all into json output
+        return_json_tmp = ReturnJson(True)
+        return_json_tmp.return_dict['evaluations'] = {
+            'scores': {
+                'holistic': scores[0],
+                'torso': scores[1],
+                'upper': scores[2],
+                'lower': scores[3]
+            },
+            'energy': {
+                'energy': energy,
+                'fat': fat,
+                'energy_standard': energy_std,
+                'fat_standard': fat_std
+            }
+        }
+
+        self.bvh.write_bvh(self.bvh.frame_rate, self.temp_dir + '/bvh_tmp.bvh')
+        with open(self.temp_dir + '/bvh_tmp.bvh', 'r') as f:
+            return_json_tmp.return_dict['bvh'] = f.read()
+        self.output_json_str = return_json_tmp .get_json()
 
         return [self.ret, self.error, self.output_json_str]

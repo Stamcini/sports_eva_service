@@ -5,11 +5,12 @@ from .settings import BASE_DIR
 from django.views.decorators.csrf import csrf_exempt
 from utils.mp_to_bvh_solution import BvhSolution
 from utils.video2mp_np import video2mp_np
-
+from utils.whole_solution import WholeSolution
 
 
 @csrf_exempt
 def video2bvh(request):
+    # deprecated
     if request.method == 'POST':
 
         # save the video to server
@@ -65,3 +66,26 @@ def video2bvh(request):
         # return HttpResponse(response_str)
 
         return HttpResponse(json.dumps(return_dict))
+
+
+@csrf_exempt
+def whole_service(request):
+    # the entire service works here
+    if request.method == 'POST':
+        config_dir = os.path.join(BASE_DIR, 'configs')
+
+        sol_tmp = WholeSolution(
+            './temp/videos/high_knees1.mp4',
+            os.path.join(config_dir, 'bvh_mp_config_tpose.json'),
+            os.path.join(config_dir, 'mp_hierarchy.json'),
+            os.path.join(config_dir, 'my6_tpose.bvh'),
+            os.path.join(config_dir, 'scoring_parts_bvh.json'),
+            './temp',
+            'static/model_videos',
+            1,
+            3600,
+            60
+        )
+
+        returned_json_str = sol_tmp.robust_workflow()
+        return HttpResponse(returned_json_str)
