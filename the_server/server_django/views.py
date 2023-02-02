@@ -79,10 +79,10 @@ def whole_service(request):
 
         # save the video to server
         file2store = request.FILES['file']
-        dir_videos = './temp/video_raw'
+        dir_videos = './temp/'
         if file2store:
             # destination = open(os.path.join(dir_videos, file2store.name), 'wb+')
-            destination = open(os.path.join(dir_videos, str(server_django.views.video_raw_count) + '.mp4'), 'wb+')
+            destination = open(os.path.join(dir_videos, 'raw_'+str(server_django.views.video_raw_count) + '.mp4'), 'wb+')
             for chunk in file2store.chunks():
                 destination.write(chunk)
             destination.close()
@@ -93,7 +93,7 @@ def whole_service(request):
         config_dir = os.path.join(BASE_DIR, 'configs')
 
         sol_tmp = WholeSolution(
-            './temp/video_raw/'+str(server_django.views.video_raw_count-1)+'.mp4',
+            './temp/raw_'+str(server_django.views.video_raw_count-1)+'.mp4',
             os.path.join(config_dir, 'bvh_mp_config_final.json'),
             os.path.join(config_dir, 'mp_hierarchy.json'),
             os.path.join(config_dir, 'my5.bvh'),
