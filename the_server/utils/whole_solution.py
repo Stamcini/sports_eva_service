@@ -11,6 +11,25 @@ from utils.mp_to_bvh_solution import BvhSolution, BvhNode
 
 # config_dir = os.path.join(BASE_DIR, 'configs')
 
+class VideoSaver:
+    video_raw_count = 0  # used for the naming of the raw videoss
+
+    @staticmethod
+    def save_from_request(request, save_dir: str) -> [bool, str, str]:
+        if not request.method == 'POST':
+            return [False, 'request method is not POST', '']
+        else:
+            file2store = request.FILES['file']
+            if not file2store:
+                return [False, 'no file in request', '']
+            else:
+                vid_addr = os.path.join(save_dir, 'raw_' + str(VideoSaver.video_raw_count) + '.mp4')
+                with open(vid_addr, 'wb+') as f:
+                    for chunk in file2store.chunks():
+                        f.write(chunk)
+                VideoSaver.video_raw_count += 1
+                return [True, '', str(vid_addr)]
+
 
 class ReturnJson:
     default = -1.
@@ -268,6 +287,9 @@ class WholeSolution:
         this is the sole robust workflow which you can use in the server
         """
 
+        # todo: use VideoSaver here
+
+
         # video to mediapipe then to numpy
         video2mp_tmp = video2mp_np(self.video)
         if not video2mp_tmp['ret']:
@@ -317,6 +339,6 @@ class WholeSolution:
         self.bvh.write_bvh(self.bvh.frame_rate, self.temp_dir + '/bvh_tmp.bvh')
         with open(self.temp_dir + '/bvh_tmp.bvh', 'r') as f:
             return_json_tmp.return_dict['bvh'] = f.read()
-        self.output_json_str = return_json_tmp .get_json()
+        self.output_json_str = return_json_tmp.get_json()
 
         return [self.ret, self.error, self.output_json_str]
