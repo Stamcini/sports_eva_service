@@ -78,14 +78,14 @@ def whole_service(request):
             './temp/videos/high_knees1.mp4',
             os.path.join(config_dir, 'bvh_mp_config_tpose.json'),
             os.path.join(config_dir, 'mp_hierarchy.json'),
-            os.path.join(config_dir, 'my6_tpose.bvh'),
+            os.path.join(config_dir, 'my5.bvh'),
             os.path.join(config_dir, 'scoring_parts_bvh.json'),
             './temp',
             'static/model_videos',
-            1,
-            3600,
-            60
+            int(request.GET['type']),
+            float(request.GET['span']),
+            float(request.GET['weight'])
         )
 
-        returned_json_str = sol_tmp.robust_workflow()
+        returned_json_str = sol_tmp.robust_workflow()[2]
         return HttpResponse(returned_json_str)
