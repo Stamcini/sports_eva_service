@@ -41,7 +41,7 @@ class BvhNode:
         pass
 
     def dcm2eulers(self):
-        import utils.math3d as math3d
+        from ..utils import math3d
         eulers = np.zeros((self.dcm.shape[0], 3))
         for i in range(eulers.shape[0]):
             eulers[i, :] = math3d.quat2euler(math3d.dcm2quat(self.dcm[i, :, :]), order='zxy')
@@ -223,7 +223,7 @@ class BvhSolution:
     def joint_fixed_rotation(self, node: BvhNode, axis_vectors: dict) -> None:
         previous_joint_coordinates = self.mp_data[:, node.mp_index, :3].copy()
         # rotation
-        import utils.math3d as math3d
+        from ..utils import math3d
         rot_matrix = np.zeros((self.mp_data.shape[0], 3, 3))
         for i in range(self.mp_data.shape[0]):
             rot_matrix[i, :, :] = math3d.dcm_from_axis(axis_vectors['x'][i, :], axis_vectors['y'][i, :],

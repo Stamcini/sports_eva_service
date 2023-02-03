@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from utils.mp_to_bvh_solution import BvhSolution
+from ..utils.mp_to_bvh_solution import BvhSolution
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles

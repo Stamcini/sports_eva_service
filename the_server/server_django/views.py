@@ -3,10 +3,10 @@ import os
 import json
 from .settings import BASE_DIR
 from django.views.decorators.csrf import csrf_exempt
-from utils.mp_to_bvh_solution import BvhSolution
-from utils.video2mp_np import video2mp_np
-from utils.whole_solution import WholeSolution
-import server_django
+from the_server.utils.mp_to_bvh_solution import BvhSolution
+from the_server.utils.video2mp_np import video2mp_np
+from the_server.utils.whole_solution import WholeSolution
+import the_server.server_django as server_django
 
 
 @csrf_exempt

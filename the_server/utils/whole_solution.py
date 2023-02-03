@@ -3,8 +3,8 @@ import copy
 import os
 import numpy as np
 import dtw
-from utils.video2mp_np import video2mp_np
-from utils.mp_to_bvh_solution import BvhSolution, BvhNode
+from the_server.utils.video2mp_np import video2mp_np
+from the_server.utils.mp_to_bvh_solution import BvhSolution, BvhNode
 
 
 # from server_django.settings import BASE_DIR
@@ -252,10 +252,10 @@ class Scoring:
 class WholeSolution:
     # stages=['load_video','video2mp','mp2bvh','scoring']
 
-    def __init__(self, video: str, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str,
+    def __init__(self, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str,
                  scoring_parts_json: str, temp_dir: str, model_video_dir: str,
                  sport_type: int, time_span: float, weight: float):
-        self.video = video
+        self.video = None
         self.mp_data = None
 
         self.ret = True  # error symbol
@@ -282,17 +282,18 @@ class WholeSolution:
     # def get_consumption(self, which: str):
     #     self.consumption_methods[which]()
 
-    def robust_workflow(self) -> [bool, str, str]:
+    def robust_workflow(self, request) -> [bool, str, str]:
         """
         this is the sole robust workflow which you can use in the server
         """
 
         # todo: use VideoSaver here
-
+        [self.ret, self.error, video_path] = VideoSaver.save_from_request(request, )
 
         # video to mediapipe then to numpy
         video2mp_tmp = video2mp_np(self.video)
         if not video2mp_tmp['ret']:
+            self.ret = False
             self.error = video2mp_tmp['error']
             self.output_dict = copy.deepcopy(ReturnJson.return_dict_default)
             self.output_dict['bvh'] = self.error
