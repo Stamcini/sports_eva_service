@@ -11,7 +11,7 @@ import the_server.server_django as server_django
 
 @csrf_exempt
 def video2bvh(request):
-    # deprecated
+    # deprecated, do not use it!
     if request.method == 'POST':
 
         # save the video to server
@@ -69,41 +69,26 @@ def video2bvh(request):
         return HttpResponse(json.dumps(return_dict))
 
 
-video_raw_count = 0
-
-
 @csrf_exempt
 def whole_service(request):
     # the entire service works here
-    if request.method == 'POST':
 
-        # save the video to server
-        file2store = request.FILES['file']
-        dir_videos = './temp/'
-        if file2store:
-            # destination = open(os.path.join(dir_videos, file2store.name), 'wb+')
-            destination = open(os.path.join(dir_videos, 'raw_'+str(server_django.views.video_raw_count) + '.mp4'), 'wb+')
-            for chunk in file2store.chunks():
-                destination.write(chunk)
-            destination.close()
-            server_django.views.video_raw_count += 1
-        else:
-            pass  # todo you'd better wrap it all into WholeSolution later
+    config_dir = os.path.join(BASE_DIR, 'configs')
 
-        config_dir = os.path.join(BASE_DIR, 'configs')
+    sol_tmp = WholeSolution(
+        './temp',
+        os.path.join(config_dir, 'bvh_mp_config_final.json'),
+        os.path.join(config_dir, 'mp_hierarchy.json'),
+        os.path.join(config_dir, 'my5.bvh'),
+        os.path.join(config_dir, 'scoring_parts_bvh.json'),
+        './temp',
+        'static/model_videos',
+        int(request.GET['type']),
+        float(request.GET['span']),
+        float(request.GET['weight'])
+    )
 
-        sol_tmp = WholeSolution(
-            './temp/raw_'+str(server_django.views.video_raw_count-1)+'.mp4',
-            os.path.join(config_dir, 'bvh_mp_config_final.json'),
-            os.path.join(config_dir, 'mp_hierarchy.json'),
-            os.path.join(config_dir, 'my5.bvh'),
-            os.path.join(config_dir, 'scoring_parts_bvh.json'),
-            './temp',
-            'static/model_videos',
-            int(request.GET['type']),
-            float(request.GET['span']),
-            float(request.GET['weight'])
-        )
+    [ret, err_message, returned_json] = sol_tmp.robust_workflow(request)
+    # todo: if you're so un-busy, writer a  logger to log it
 
-        returned_json_str = sol_tmp.robust_workflow()[2]
-        return HttpResponse(returned_json_str)
+    return HttpResponse(returned_json)

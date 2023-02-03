@@ -252,16 +252,17 @@ class Scoring:
 class WholeSolution:
     # stages=['load_video','video2mp','mp2bvh','scoring']
 
-    def __init__(self, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str,
+    def __init__(self, raw_video_dir: str, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str,
                  scoring_parts_json: str, temp_dir: str, model_video_dir: str,
                  sport_type: int, time_span: float, weight: float):
+        self.raw_video_dir = raw_video_dir
         self.video = None
         self.mp_data = None
 
         self.ret = True  # error symbol
         self.error = ''  # error message if it fails somewhere
         self.scoring_parts_json = scoring_parts_json
-        self.temp_dir = temp_dir
+        self.temp_dir = temp_dir  # used for random/model.npy files
         self.model_video_dir = model_video_dir
         self.bvh = BvhSolution(bvh_mp_config_json, mp_hierarchy_json, bvh_template_file)
 
@@ -287,8 +288,15 @@ class WholeSolution:
         this is the sole robust workflow which you can use in the server
         """
 
-        # todo: use VideoSaver here
-        [self.ret, self.error, video_path] = VideoSaver.save_from_request(request, )
+        # save the raw video from request
+        [self.ret, self.error, video_path] = VideoSaver.save_from_request(request, self.raw_video_dir)
+        if not self.ret:
+            self.output_dict = copy.deepcopy(ReturnJson.return_dict_default)
+            self.output_dict['bvh'] = self.error
+            self.output_json_str = json.dumps(self.output_dict)
+            return [self.ret, self.error, self.output_json_str]
+        else:
+            self.video = video_path
 
         # video to mediapipe then to numpy
         video2mp_tmp = video2mp_np(self.video)
