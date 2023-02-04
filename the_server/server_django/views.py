@@ -76,13 +76,13 @@ def whole_service(request):
     config_dir = os.path.join(BASE_DIR, 'configs')
 
     sol_tmp = WholeSolution(
-        './temp',
+        os.path.join(BASE_DIR, 'temp'),
         os.path.join(config_dir, 'bvh_mp_config_final.json'),
         os.path.join(config_dir, 'mp_hierarchy.json'),
         os.path.join(config_dir, 'my5.bvh'),
         os.path.join(config_dir, 'scoring_parts_bvh.json'),
-        './temp',
-        'static/model_videos',
+        os.path.join(BASE_DIR, 'temp'),
+        os.path.join(BASE_DIR, 'static/model_videos'),
         int(request.GET['type']),
         float(request.GET['span']),
         float(request.GET['weight'])
