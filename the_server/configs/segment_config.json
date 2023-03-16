@@ -1,0 +1,29 @@
+{
+  "0": {
+    "type": "high_knees",
+    "nodes_to_use": {
+      "26": {
+        "index": 26,
+        "axis_to_use": 1
+      }
+    }
+  },
+  "1": {
+    "type": "jumping_jacks",
+    "nodes_to_use": {
+      "16": {
+        "index": 16,
+        "axis_to_use": 1
+      }
+    }
+  },
+  "2": {
+    "type": "quadruped_thoracic_rotation",
+    "nodes_to_use": {
+      "16": {
+        "index": 16,
+        "axis_to_use": 1
+      }
+    }
+  }
+}
