@@ -2,9 +2,10 @@ import json
 import copy
 import os
 import numpy as np
+import scipy.signal as scisig
 import dtw
 from the_server.utils.video2mp_np import video2mp_np
-from the_server.utils.mp_to_bvh_solution import BvhSolution, BvhNode
+from the_server.utils.mp_to_bvh_solution import BvhSolution
 
 
 # from server_django.settings import BASE_DIR
@@ -12,7 +13,7 @@ from the_server.utils.mp_to_bvh_solution import BvhSolution, BvhNode
 # config_dir = os.path.join(BASE_DIR, 'configs')
 
 class VideoSaver:
-    video_raw_count = 0  # used for the naming of the raw videoss
+    video_raw_count = 0  # used for the naming of the raw videos
 
     @staticmethod
     def save_from_request(request, save_dir: str) -> [bool, str, str]:
@@ -71,7 +72,8 @@ class Scoring:
     met_values = [8, 8, 3]
     fat_percentage = [0.3, 0.3, 0.5]
 
-    def __init__(self, bvh: BvhSolution, sport_type: int, scoring_parts_config_json: str, model_seq_dir: str,
+    def __init__(self, bvh: BvhSolution, sport_type: int, scoring_parts_config_json: str, segment_config_json: str,
+                 model_seq_dir: str,
                  random_seq_dir: str,
                  model_vid_dir: str, random_seed: int = 1000):
         self.bvh = bvh
@@ -79,9 +81,13 @@ class Scoring:
         self.armature = Scoring.armature_from_bvh(bvh)
         with open(scoring_parts_config_json, 'r') as f:
             self.scoring_parts = json.loads(f.read())
+        with open(segment_config_json, 'r') as f:
+            self.segment_configs = json.loads(f.read())
         self.random_seed = random_seed
         if sport_type not in [0, 1, 2]:
             raise "sport type should fall in these values: [0,1,2]"
+        else:
+            self.sport_type = sport_type
         if 'model_' + str(sport_type) + '.npy' not in os.listdir(model_seq_dir):
             self.regenerate_model_seq(model_seq_dir, model_vid_dir, sport_type)
         self.model_seq = np.load(model_seq_dir + '/model_' + str(sport_type) + '.npy')
@@ -174,6 +180,19 @@ class Scoring:
         return normalized_seq
 
     @staticmethod
+    def mp_index2normalized_index(mp_index: int, bvh: BvhSolution) -> int:
+        norm_index = -1
+        for node in bvh.nodes:
+            if node.mp_index == mp_index:
+                norm_index = node.index
+                break
+
+        if norm_index == -1:
+            raise "mp_index " + str(mp_index) + " is not in the normalized indices"
+        else:
+            return norm_index
+
+    @staticmethod
     def distance_euclidean(x: np.ndarray, y: np.ndarray):
         return np.sum((x - y) ** 2)
 
@@ -182,10 +201,42 @@ class Scoring:
         return np.abs(1 - np.log(x + 1) / np.log(maximum + 1))
 
     @staticmethod
-    def get_scores_static(subject_seq: np.ndarray, curated_lm_list: [int, ...], model_seq: np.ndarray,
-                          random_seq: np.ndarray,
-                          distance_method=distance_euclidean,
-                          dtw2scores_method=dtw2scores_1) -> float:
+    def exp_smoother(data: np.ndarray, axis: int, smoothing_factor: float) -> np.ndarray:
+
+        data = np.expand_dims(data, -1)
+        data = np.swapaxes(data, 0, axis)
+        filtered_exp = np.zeros(data.shape)
+        filtered_exp[0, :] = data[0, :]
+        for i in range(1, data.shape[0]):
+            filtered_exp[i, :] = smoothing_factor * data[i, :] + (
+                    1 - smoothing_factor) * filtered_exp[i - 1, :]
+        return np.squeeze(filtered_exp)
+
+    @staticmethod
+    def rough_segment(data: np.ndarray) -> [(int, int), ...]:
+        # data.shape()=(n,1,1)
+        # mp_node_to_use is the node's index, according to its mediapipe index
+
+        # smooth the data drastically
+        smoothing_factor = 0.1
+        smoothed = Scoring.exp_smoother(data, 0, smoothing_factor)
+        # smoothed = Scoring.exp_smoother(smoothed, 0, smoothing_factor)
+
+        # find peaks
+        peaks = scisig.find_peaks(smoothed, height=np.mean(smoothed))[0]
+        peaks_mean = np.mean(smoothed[peaks])
+        peaks_std = np.std(smoothed[peaks])
+        peaks = scisig.find_peaks(smoothed, height=(peaks_mean - peaks_std, peaks_mean + peaks_std))[0]
+
+        # get the pieces
+        pieces = [(peaks[i], peaks[i + 1]) for i in range(peaks.shape[0] - 1)]
+        return pieces
+
+    @staticmethod
+    def get_scores_for_one_piece(subject_seq: np.ndarray, model_seq: np.ndarray, random_seq: np.ndarray,
+                                 curated_lm_list: [int, ...],
+                                 distance_method=distance_euclidean,
+                                 dtw2scores_method=dtw2scores_1) -> float:
         curated_model = np.take(model_seq, curated_lm_list, 1)
         curated_seq = np.take(subject_seq, curated_lm_list, 1)
         dtw_distance_accumulated = dtw.dtw(curated_model, curated_seq, distance_method)[0]
@@ -194,31 +245,45 @@ class Scoring:
         score = dtw2scores_method(dtw_distance_accumulated, dtw_distance_random)
         return score
 
+    @staticmethod
+    def sqrt_after_sqrt(data: float, times: int) -> float:
+        while times > 0:
+            data = np.sqrt(data)
+            times -= 1
+        return data
+
+    @staticmethod
+    def get_scores_static(subject_seq: np.ndarray, model_seq: np.ndarray, random_seq: np.ndarray,
+                          curated_lm_list: [int, ...],
+                          segment_node_to_use: int,
+                          segment_axis_to_use: int,
+                          distance_method=distance_euclidean,
+                          dtw2scores_method=dtw2scores_1) -> float:
+
+        model_segments = Scoring.rough_segment(model_seq[:, segment_node_to_use, segment_axis_to_use])
+        subject_segments = Scoring.rough_segment(subject_seq[:, segment_node_to_use, segment_axis_to_use])
+
+        key_args = {
+            'random_seq': random_seq,
+            'curated_lm_list': curated_lm_list,
+            'distance_method': distance_method,
+            'dtw2scores_method': dtw2scores_method
+        }
+
+        scores = [Scoring.get_scores_for_one_piece(subject_seq[i[0]:i[1], :], model_seq[j[0]:j[1], :], **key_args) for i
+                  in subject_segments for j in model_segments]
+
+        return Scoring.sqrt_after_sqrt(float(np.mean(scores)), 2)
+
     def get_scores(self, mp_data, part: str) -> float:
         if part not in self.scoring_parts:
             raise "invalid part!"
-        return Scoring.get_scores_static(mp_data, self.scoring_parts[part], self.model_seq, self.random_seq,
+        segment_node_mp_index = self.segment_configs[str(self.sport_type)]['nodes_to_use']['0']['index']
+        segment_node = Scoring.mp_index2normalized_index(segment_node_mp_index, self.bvh)
+        segment_axis = self.segment_configs[str(self.sport_type)]['nodes_to_use']['0']['axis_to_use']
+        return Scoring.get_scores_static(mp_data, self.model_seq, self.random_seq, self.scoring_parts[part],
+                                         segment_node, segment_axis,
                                          self.distance_euclidean, self.dtw2scores_1)
-
-    # @staticmethod
-    # def holistic():
-    #     pass
-    #
-    # @staticmethod
-    # def torso():
-    #     pass
-    #
-    # @staticmethod
-    # def upper():
-    #     pass
-    #
-    # @staticmethod
-    # def lower():
-    #     pass
-
-    # @staticmethod
-    # def get_scores(model_seq, subject_seq, body_part: str):
-    #     pass
 
     @staticmethod
     def energy(weight: float, time_span: float) -> float:
@@ -253,7 +318,7 @@ class WholeSolution:
     # stages=['load_video','video2mp','mp2bvh','scoring']
 
     def __init__(self, raw_video_dir: str, bvh_mp_config_json: str, mp_hierarchy_json: str, bvh_template_file: str,
-                 scoring_parts_json: str, temp_dir: str, model_video_dir: str,
+                 scoring_parts_json: str, segment_configs_json: str, temp_dir: str, model_video_dir: str,
                  sport_type: int, time_span: float, weight: float):
         self.raw_video_dir = raw_video_dir
         self.video = None
@@ -262,6 +327,7 @@ class WholeSolution:
         self.ret = True  # error symbol
         self.error = ''  # error message if it fails somewhere
         self.scoring_parts_json = scoring_parts_json
+        self.segment_configs_json = segment_configs_json
         self.temp_dir = temp_dir  # used for random/model.npy files
         self.model_video_dir = model_video_dir
         self.bvh = BvhSolution(bvh_mp_config_json, mp_hierarchy_json, bvh_template_file)
@@ -316,7 +382,8 @@ class WholeSolution:
         self.bvh.convert_mediapipe(self.mp_data)
 
         # scoring & consumption
-        scorer_tmp = Scoring(self.bvh, self.sport_type, self.scoring_parts_json, self.temp_dir,
+        scorer_tmp = Scoring(self.bvh, self.sport_type, self.scoring_parts_json, self.segment_configs_json,
+                             self.temp_dir,
                              self.temp_dir,
                              self.model_video_dir)
 

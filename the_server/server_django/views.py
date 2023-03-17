@@ -81,6 +81,7 @@ def whole_service(request):
         os.path.join(config_dir, 'mp_hierarchy.json'),
         os.path.join(config_dir, 'my5.bvh'),
         os.path.join(config_dir, 'scoring_parts_bvh.json'),
+        os.path.join(config_dir, 'segment_config.json'),
         os.path.join(BASE_DIR, 'temp'),
         os.path.join(BASE_DIR, 'static/model_videos'),
         int(request.GET['type']),
