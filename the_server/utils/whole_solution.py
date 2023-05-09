@@ -95,6 +95,7 @@ class Scoring:
             self.regenerate_maximum_random_seq(random_seq_dir, (self.model_seq.shape[0], 36, 3), random_seed,
                                                sport_type)
         self.random_seq = np.load(random_seq_dir + '/random_' + str(sport_type) + '.npy')
+        self.scores = {}
 
     def regenerate_model_seq(self, seq_dir: str, vid_dir: str, sport_type: int = -1) -> None:
         # model videos are names 0.mp4, 1.mp4 and 2.mp4
@@ -281,27 +282,27 @@ class Scoring:
         segment_node_mp_index = self.segment_configs[str(self.sport_type)]['nodes_to_use']['0']['index']
         segment_node = Scoring.mp_index2normalized_index(segment_node_mp_index, self.bvh)
         segment_axis = self.segment_configs[str(self.sport_type)]['nodes_to_use']['0']['axis_to_use']
-        return Scoring.get_scores_static(mp_data, self.model_seq, self.random_seq, self.scoring_parts[part],
-                                         segment_node, segment_axis,
-                                         self.distance_euclidean, self.dtw2scores_1)
+        self.scores[part] = Scoring.get_scores_static(mp_data, self.model_seq, self.random_seq,
+                                                      self.scoring_parts[part],
+                                                      segment_node, segment_axis,
+                                                      self.distance_euclidean, self.dtw2scores_1)
+        return self.scores[part]
 
-    @staticmethod
-    def energy(weight: float, time_span: float) -> float:
+    def energy(self, weight: float, time_span: float) -> float:
         # weight in kg
         # time_span in seconds
         # return: energy in kcal
 
-        return weight * 0.95 * time_span / 3600  # here use 0.95 rather than 1.05 to make it looks reasonable
+        return weight * 1.05 * time_span / 3600 * self.scores['holistic']
 
-    @staticmethod
-    def fat(sport_type: int, weight: float, time_span: float) -> float:
+    def fat(self, sport_type: int, weight: float, time_span: float) -> float:
         # sport_type in [0,1,2]
         # weight in kg
         # time_span in seconds
         # return: energy in kcal
         if sport_type not in [0, 1, 2]:
             raise "invalid sport type! [0,1,2] is stipulated"
-        return Scoring.energy(weight, time_span) * Scoring.fat_percentage[sport_type]
+        return self.energy(weight, time_span) * Scoring.fat_percentage[sport_type] * self.scores['holistic']
 
     @staticmethod
     def energy_standard(weight: float, time_span: float) -> float:
@@ -390,8 +391,8 @@ class WholeSolution:
         mp_data_normalized = scorer_tmp.get_normalized_mp_seq(self.bvh)
         scores = [scorer_tmp.get_scores(mp_data_normalized, i) for i in Scoring.body_parts]
 
-        energy = Scoring.energy(self.weight, self.time_span)
-        fat = Scoring.fat(self.sport_type, self.weight, self.time_span)
+        energy = scorer_tmp.energy(self.weight, self.time_span)
+        fat = scorer_tmp.fat(self.sport_type, self.weight, self.time_span)
         energy_std = Scoring.energy_standard(self.weight, self.time_span)
         fat_std = Scoring.fat_standard(self.sport_type, self.weight, self.time_span)
 
